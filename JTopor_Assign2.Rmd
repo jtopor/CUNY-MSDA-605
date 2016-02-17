@@ -1,0 +1,190 @@
+---
+title: "CUNY MSDA 605 Spring 2016 Assignment 2"
+author: "James Topor"
+output: html_document
+---
+
+# ---------------------------------------------------------------------------
+### Problem Set 1  
+
+__1) Show that, in general, $A^TA  != AA^T$__
+
+A fundamental construct of matrix algebra states that matrix multiplication is generally  __not__ commutative.  
+
+For any non-square __$m x n$__ matrix it is fairly simple to prove that $A^TA  != AA^T$.  
+  
+The transpose of an __$m x n$__ matrix will have dimension __$n x m$__. As such, $A^T * A$ will be an __$n x n$__ matrix, whereas $A * A^T$ will be an __$m x m$__ matrix. An example demonstrates this:  
+
+```{r}
+A <- rbind(c(1, 3, 4), 
+           c(2, 7, 6))
+
+# A is 2x3 while t(A) is 3x2; their product is a 2x2
+A %*% t(A)
+
+# t(A) is 3x2 while A is 2x3; their product is a 3x3
+t(A)%*% A
+```
+
+Clearly, the two cannot be equivalent since their products are matrices whose dimensions are not the same.  
+  
+For any square matrix, we can demonstrate that, in general, $A^TA  != AA^T$ by examining the behavior of a 2 x 2 matrix.
+  
+Suppose we have a 2 x 2:
+
+```{r, echo=FALSE}
+a <- rbind(c('a', 'b'), 
+           c('c', 'd'))
+a
+```
+
+The transpose of this 2 x 2 would be:
+```{r, echo=FALSE}
+aTran <- rbind(c('a', 'c'), 
+               c('b', 'd'))
+aTran
+```
+  
+So the product of $A^T * A$ would be:
+```{r, echo=FALSE}
+aTa <- rbind(c('(a*a) + (c*c)', '(a*b) + (c*d)'), 
+             c('(b*a) + (d*c)', '(b*b) + (d*d)'))
+aTa
+```
+  
+whereas the product of $A * A^T$ would be:
+```{r, echo=FALSE}
+aaT <- rbind(c('(a*a) + (b*b)', '(a*c) + (b*d)'), 
+             c('(c*a) + (d*b)', '(c*c) + (d*d)'))
+aaT
+```
+  
+We can clearly see that the resulting product matrices are not identical since the dot products are not equivalent. As such, in general, $A^TA  != AA^T$.  
+
+# ---------------------------------------------------------------------------
+__2) For some square matrices, $A^TA = AA^T$__  
+Specifically, this holds true when the matrix is an __$n x n$__ symmetric matrix, such as the identity matrix.  
+  
+
+# ---------------------------------------------------------------------------
+###Problem Set 2  
+
+Write an R function to factorize a square matrix A into LU or LDU, with dimension up to 5x5 max.
+
+The function __LUFactorizer__ given below factorizes an __$n x n$__ matrix __A__ into __LU__. The output of the function is a list containing the individual lower triangular and upper triangular matrices derived from A during the factorization process. The output of the function is subsequently validated by multiplying matrix __L__ by matrix __U__ and checking to see if the results of that multiplication produce the original matrix __A__.  
+
+```{r}
+
+# This function finds the LU decomposition of an input nxn matrix 'A'.
+# The output of the function is a list containing 2 items: the lower triangular and upper
+# triangular components of matrix A.
+LUFactorizer <- function(A) {
+
+  rows <- nrow(A)
+  cols <- ncol(A)
+
+  if ( rows != cols) {
+    print("Input Matrix is NOT a square matrix")
+    return ()
+  }
+
+  # Create an Identity matrix of size rows x cols to store the multipliers
+  # At end, this matrix will be the lower triangular component of solution
+  LowerT <- diag(rows)
+  
+  # for each row below the first, zero out items below the diagonal
+  for(i in 2:rows) {
+    
+    # for each column in each row below diag, eliminate until all zeroes
+    for(j in 1:(i-1)) {
+
+      # Generate identity/elim matrix for element [i,j]
+      Elim <- diag(rows)
+      
+      # Compute multiplier + make NEGATIVE before applying to elim candidate
+      # e.g., E21 = -(A21/A11)
+      Elim[i, j] <- -(A[i,j]/A[j,j])  
+
+      # Eliminate element [i,j] below diag. from A
+      A <- Elim %*% A
+      
+      # Update matrix LowerT with the multiplier:
+      # multiply LowerT by the inverse of the [i,j] Elim matrix
+      LowerT <- LowerT %*% solve(Elim)
+
+    } # end for each column
+  } # end for each row
+
+  # When loops are complete, LowerT = lower triangular, A = upper triangular
+  # so return both and exit function
+  return(list('LowerT'=LowerT,'UpperT'=A))
+}
+```
+
+
+### Test a 2x2 Matrix
+```{r}
+
+# Test 2x2
+A <- rbind(c(1, 3), 
+           c(2, 7))
+           
+LU <- LUFactorizer(A)
+LU
+
+# check to ensure A = LU
+round((LU$LowerT %*% LU$UpperT), 2) == A
+```
+
+
+### Test a 3x3 Matrix
+```{r}
+
+# ---------------
+# Test 3x3
+A <- rbind(c(1, 3, 4), 
+           c(2, 7, 9), 
+           c(3, 5, 2))
+
+LU <- LUFactorizer(A)
+LU
+
+# check to ensure A = LU
+round((LU$LowerT %*% LU$UpperT), 2) == A
+```
+
+### Test a 4x4 Matrix
+```{r}
+
+# ----------------
+# Test 4x4
+A <- rbind(c(1, 1, 5, 4), 
+           c(2, 3, 4, 2), 
+           c(3, 2, 3, 2),
+           c(4, 4, 2, 1))
+
+LU <- LUFactorizer(A)
+LU
+
+# check to ensure A = LU
+round((LU$LowerT %*% LU$UpperT), 2) == A
+```
+
+### Test a 5x5 Matrix
+```{r}
+
+# ----------------
+# Test  5x5
+A <- rbind(c(6, 7, 5, 4, 11), 
+           c(2, 3, 13, 2, 9), 
+           c(3, 0, 4, 6, 5),
+           c(4, 14, 2, 1, 3),
+           c(0, 2, 11, 8, 7))
+
+LU <- LUFactorizer(A)
+LU
+
+# check to ensure A = LU
+round((LU$LowerT %*% LU$UpperT), 2) == A
+```
+
