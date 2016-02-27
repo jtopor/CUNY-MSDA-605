@@ -1,0 +1,166 @@
+---
+title: "CUNY MSDA 605 Spring 2016 Assignment 3"
+author: "James Topor"
+output: html_document
+---
+
+# --------------------------------------------------------------------
+### Problem Set 1  
+
+__1.__ What is the rank of the 4x4 matrix (shown in the assignment)?
+
+The matrix has rank = 4 as evidenced by the fact that it has 4 independent rows and 4 independent columns. Since it is a 4x4 matrix and has rank = 4, it is also a "full rank" matrix.
+
+# --------------------------------------------------------------------
+__2.__ Given an mxn matrix where $m > n$, what can be the maximum rank?
+
+The maximum rank of an mxn matrix where $m > n$ is $n$.
+
+What is the minimum rank, assuming the matrix is non-zero?
+
+The minimum rank of a non-zero matrix is 1.
+
+# --------------------------------------------------------------------
+__3.__ What is the rank of matrix B?
+
+Each row in the matrix can be derived by multiplying one of the other rows of the matrix by a scalar. Similarly, each column of the matrix can be derived by multiplying one of the other columns by a scalar. As such, the rank of the 3x3 matrix shown is 1 since we have no independent rows and no independent columns.
+
+# --------------------------------------------------------------------
+### Problem Set 2  
+
+Compute the eigenvalues and eigenvectors of the following matrix:
+```{r}
+A <- rbind(c(1, 2, 3), 
+           c(0, 4, 5), 
+           c(0, 0, 6))
+```
+
+To find the eigenvalues of a matrix we need to solve Det (A -  $\lambda$I) = 0
+
+The matrix (A - $\lambda$I) is:
+
+(1 - $\lambda$), 2, 3  
+0, (4 - $\lambda$), 5  
+0,  0, (6 - $\lambda$)  
+
+Since this is a triangular matrix (all entries below the diagonal = zeroes), its determinant is simply the product of the entries along the diagonal:
+
+Det (A -  $\lambda$I) =  $(1-\lambda) * (4-\lambda) * (6-\lambda)$  
+  
+Therefore, __the eigenvalues are:  $\lambda = (1, 4, 6)$__  
+
+And the characteristic polynomial is:  
+
+$(1-\lambda) * (4-\lambda) * (6-\lambda)$ =>
+
+$(1-\lambda) * (24 - 10\lambda + \lambda^2)$ => 
+
+$(24 - 10\lambda + \lambda^2) + (-24\lambda + 10\lambda^2 - \lambda^3)$ =>
+
+$24 - 34\lambda + 11\lambda^2 - \lambda^3 = 0$
+
+
+To find the eigenvectors we need to solve (A - $\lambda$I) for each eigenvalue $\lambda$.
+
+We'll start with $\lambda$ = 1
+```{r}
+# get number of rows for matrix A
+rows <- nrow(A)
+
+# create an identity matrix matching dimension of matrix A
+# NOTE: This assumes that A is a square matrix
+evMat1 <- diag(rows)
+
+# scale identity matrix by the eigenvalue
+evMat1 <- evMat1 * 1
+
+# subtract eigenvalue matrix from A
+evecMat1 <- A - evMat1
+evecMat1
+```
+
+After subtracting the scaled identity matrix from A, we're left with the following equations for $\lambda$ = 1:
+
+1: 0v1 + 2v2 + 3v3 = 0  
+2: 0v1 + 3v2 + 5v3 = 0  
+3: 0v1 + 0v2 + 5v3 = 0  
+
+Now we attempt back substitution. Equation 3 gives us __v3 = 0__. 
+
+Since substituting that value into both the first and second equations yields value of 0 for v2, __the eigenvector for $\lambda$ = 1 is [1, 0, 0]__ since we must have a non-zero vector. 
+
+
+
+Now we'll look at $\lambda$ = 4
+```{r}
+# get number of rows for matrix A
+rows <- nrow(A)
+
+# create an identity matrix matching dimension of matrix A
+# NOTE: This assumes that A is a square matrix
+evMat2 <- diag(rows)
+
+# scale identity matrix by the eigenvalue
+evMat2 <- evMat2 * 4
+
+# subtract eigenvalue matrix from A
+evecMat2 <- A - evMat2
+evecMat2
+```
+
+After subtracting the scaled identity matrix from A, we're left with the following equations for $\lambda$ = 4:
+
+-3v1 + 2v2 + 3v3 = 0  
+ 0v1 + 0v2 + 5v3 = 0  
+ 0v1 + 0v2 + 2v3 = 0  
+
+Back substituting, we find __v3 = 0__ per the third equation. The second equation is also in terms of v3 since the scalars for v1 and v2 are both zero, so we proceed on to the first equation and substitute __v3 = 0__ to get __2v2 = 3v1__ which gives us __v2 = 3/2v1__. So if we assume __v1 = 1__, we have __v2 = 3/2__, and __our eigenvector for $\lambda$ = 4 is [1, 3/2, 0]__.
+
+
+Finally, we look at $\lambda$ = 6
+```{r}
+# get number of rows for matrix A
+rows <- nrow(A)
+
+# create an identity matrix matching dimension of matrix A
+# NOTE: This assumes that A is a square matrix
+evMat3 <- diag(rows)
+
+# scale identity matrix by the eigenvalue
+evMat3 <- evMat3 * 6
+
+# subtract eigenvalue matrix from A
+evecMat3 <- A - evMat3
+evecMat3
+```
+
+After subtracting the scaled identity matrix from A, we're left with the following equations for $\lambda$ = 6:
+
+-5v1 + 2v2 + 3v3 = 0  
+ 0v1 + -2v2 + 5v3 = 0  
+ 0v1 + 0v2 + 0v3 = 0  
+
+Since the third equation yields no information we can use for back substitution, we'll start with the second equation, which yields __5(v3) = 2(v2)__, which can be reduced to __v3 = 2/5(v2)__. So if we assume __v2 = 1__, we get __v3 = 2/5__ as a possible solution to the second equation.
+
+
+For the first equation, substituting __v3 = 2/5(v2)__ and __v2 = 1__ yields:  
+-5v1 + 2v2 + 3*(2/5v2) = 0 =>  
+-5v1 + 2v2 + 6/5v2= 0 =>  
+2v2 + 6/5v2 = 5v1 =>  
+16/5v2 = 5v1 =>  
+16/25v2 = v1 =>  
+16/25(1) = v1 =>  
+v1 = 16/25
+
+
+So __the eigenvector for $\lambda$ = 6 is [16/25, 1, 2/5]__.
+
+
+To summarize, the eigenvalues are $\lambda = (1, 4, 6)$.  
+
+The eigenvectors are:  
+[1, 0, 0]  
+
+[1, 3/2, 0]  
+
+[16/25, 1, 2/5]
