@@ -1,0 +1,191 @@
+---
+title: "CUNY MSDA 605 Spring 2016 Assignment 5"
+author: "James Topor"
+output: html_document
+---
+
+### Problem Set 1  
+
+# ----------------------------------------------------------
+- __Write R markdown script to compute $(A^T)A$ and $(A^T)b$.__  
+
+First we'll create the required matrix A and vector b:
+```{r}
+# Create required matrix A
+A <- rbind(c(1, 0), 
+           c(1, 1),
+           c(1, 3), 
+           c(1, 4))
+
+# create vector b
+b <- matrix(c(0, 8, 8, 20), nrow = 4)
+```
+
+Now that we have our matrix and vector defined we can compute $(A^T)A$ and $(A^T)b$:
+```{r}
+# Calculate A^T * A
+aTa <- t(A) %*% A
+aTa
+
+# Calculate A^T * b
+aTb <- t(A) %*% b
+aTb
+```
+
+# ----------------------------------------------------------
+- __Solve for $xhat$ in R using the above two computed matrices.__
+
+From the lecture notes, we know that $(A^T)A * xhat = (A^T)b$. Solving this equation for $xhat$ yields $xhat = 1/(A^T) * (A^T)b$. Since $1/(A^T)$ is simply the inverse of $(A^T)$ we an solve for $xhat$ using the following R code:  
+
+```{r}
+xhat <- solve(aTa) %*% aTb
+xhat
+```
+
+We have a least squares approximation of $xhat = [1, 4]$.
+
+We can compare these results to those of R's native __lsfit__ function:
+```{r}
+Rxhat <- lsfit(A, b, intercept = FALSE)
+Rxhat$coefficients
+```
+
+As we can see, the results match. As such, our least squares approximation of [x1, x2] is [1, 4]  
+
+# ----------------------------------------------------------
+__What is the squared error of this solution?__  
+
+The error vector is computed as $e = b - A*xhat$:  
+```{r}
+e <- b - A %*% xhat
+e
+```
+
+We can check this error vector against the __$residuals__ output of the __lsfit__ function we ran earlier:  
+```{r}
+Rxhat$residuals
+```
+
+As we can see, the results match, so our error vector is [-1, 3, -5, 3]. Summing the squares of the elements of this vector gives us the squared error:  
+```{r}
+sqErr <- sum(e^2)
+sqErr
+```
+So the squared error is 44.  
+
+
+# ----------------------------------------------------------
+__Instead of b, start with p = [1, 5, 13, 17] and find the exact solution__
+
+From the lecture notes we know that $Ax = b = p + e$. Therefore, if we are looking to find an exact solution using $p$, we need to assume that $e = 0$. This gives us $Ax = p$ and our error vector calculation becomes $e = p - A*x$: 
+
+```{r}
+# create vector p
+p <- matrix(c(1, 5, 13, 17), nrow = 4)
+
+# A^T * A was already calculated above and its result is stored in variable 'aTa'
+
+# Calculate A^T * p
+aTp <- t(A) %*% p
+aTp
+
+# multipe aTp by the inverse of aTa to find the exact solution x
+x <- solve(aTa) %*% aTp
+x
+
+# The error vector is computed as e = p - A*x:
+e2 <- p - A %*% x
+round(e2, 3)
+```
+
+As we can see, if p = [1, 5, 13, 17] our error vector is the zero vector. Therefore, we have found an exact solution in $x = [1, 4]$.
+
+# ----------------------------------------------------------
+__Show that the error e = b - p = [-1, 3, -5, 3]__  
+
+Subtracting vector p from vector b yields e = [-1, 3, -5, 3]:
+```{r}
+b - p
+```
+
+
+# ----------------------------------------------------------
+__Show that the error e is orthogonal to p and to each of the columns of A__  
+
+Two vectors are orthogonal if their dot product is zero. We can therefore check this as follows:
+```{r}
+p <- A %*% xhat
+round(sum(e * p), 3)
+```
+
+Since the dot product is, in fact, zero, e is orthogonal to p.
+
+We can perform the same test using each of the columns of A to ensure that the error vector e is in fact
+orthogonal to each column of A:
+```{r}
+round(sum(e * A[ ,1]), 3)
+round(sum(e * A[ ,2]), 3)
+```
+
+And the error vector e is, in fact, orthogonal to each of the columns of A.
+
+
+# ----------------------------------------------------------
+### Problem Set 2
+
+We'll start by reading the contents of the 'auto-mpg.data' file into an R table and then extracting matrix A and vector b from that table.  
+```{r}
+# Read the contents of the auto-mpg.data file into a table
+# NOTE: the data file is read from a publically accessible Github page
+autoData <- read.table("https://raw.githubusercontent.com/jtopor/CUNY-MSDA-605/master/auto-mpg.data",
+                       col.names=c('displcm', 'hp', 'weight', 'accel', 'mpg'))
+
+head(autoData)
+
+# Create matrix A using columns 1 through 4
+A <- data.matrix(autoData[ ,1:4])
+
+# Create vector b using column 5
+b <- data.matrix(autoData[ ,5])
+```
+
+Now, using matrix A and vector b, we'll apply the least squares approach we used in __Problem Set 1__ to compute the best fitting solution.
+
+```{r}
+# Calculate A^T * A
+aTa <- t(A) %*% A
+
+# Calculate A^T * b
+aTb <- t(A) %*% b
+
+xhat <- solve(aTa) %*% aTb
+round(xhat, 3)
+```
+
+Our calculations indicate that the equation which expresses the best fit solution is: $$MPG = (-0.030 * Displacement) + (0.157 * horsepower) + (-0.006 * weight) + (1.997 * acceleration)$$  
+
+Finally, we calculate the squared error (also known as the "fitting error"):
+```{r}
+# calculate the error vector 'e'
+e <- b - (A %*% xhat)
+
+# now calculate the squared error by summing the squares of each element of the error vector
+sqErr <- sum(e^2)
+sqErr
+```
+
+Our calculations show that our fitting error is 13101.43.
+
+In addition to calculating the squared error, we can plot a histogram of the error vector 'e' to see if it is normally distributed:
+```{r}
+hist(e)
+```
+The distribution of the error vector does appear to be normally distributed.
+
+As a validation check, we can compare our computations against those of R's native least squares function __lsfit__:  
+```{r}
+Rxhat <- lsfit(A, b, intercept = FALSE)
+round(Rxhat$coefficients, 3)
+```
+
+As we can see, R's native __lsfit__ function yields an indentical least squares solution.
